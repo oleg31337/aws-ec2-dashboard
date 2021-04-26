@@ -1,0 +1,21 @@
+{
+  "name": "aws-ec2-dashboard",
+  "description": "Simplified AWS EC2 dashboard",
+  "version": "0.1.0",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "aws-sdk": "^2.*",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "fs": "0.0.1-security",
+    "http": "0.0.1-security",
+    "https": "^1.0.0",
+    "passport": "^0.4.1",
+    "passport-saml": "^2.1.0",
+    "session-file-store": "^1.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oleg31337/aws-ec2-dashboard"
+  }
+}

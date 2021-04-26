@@ -1,0 +1,74 @@
+{
+  "Accounts":{
+    "devaccount": {
+      "Name": "Development",
+      "AWSKey": "AAABBBCCCDDDEEEFFF",
+      "AWSSecret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "Regions": [
+        {
+          "region": "us-east-1",
+          "name": "N. Virginia"
+        },
+        {
+          "region": "us-east-2",
+          "name": "Ohio"
+        },
+        {
+          "region": "us-west-1",
+          "name": "N. California"
+        },
+        {
+          "region": "us-west-2",
+          "name": "Oregon"
+        },
+        {
+          "region": "ca-central-1",
+          "name": "Canada"
+        },
+        {
+          "region": "eu-central-1",
+          "name": "Frankfurt"
+        },
+        {
+          "region": "eu-west-1",
+          "name": "Ireland"
+        }
+      ],
+      "Tags": ["Name","OneTag","AnotherTag"],
+      "AuthorizedUsers": ["admin1@acme.com", "admin2@acme.com", "developer1@acme.com"]
+    },
+    "prodaccount": {
+      "Name": "Production",
+      "AWSKey": "GGGGHHHHIIIIJJJJ",
+      "AWSSecret": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+      "Regions": [
+        {
+            "region": "us-east-1",
+            "name": "N.Virginia"
+        },
+        {
+            "region": "us-west-1",
+            "name": "N.California"
+        },
+        {
+            "region": "us-west-2",
+            "name": "Oregon"
+        },
+        {
+            "region": "eu-central-1",
+            "name": "Frankfurt"
+        },
+        {
+            "region": "eu-west-1",
+            "name": "Ireland"
+        },
+        {
+            "region": "ap-northeast-1",
+            "name": "Tokyo"
+        }
+      ],
+      "Tags": ["Name","ProdTag","OtherTag"],
+      "AuthorizedUsers": ["admin1@acme.com", "admin2@acme.com", "operator1@acme.com"]
+    }
+  }
+}
