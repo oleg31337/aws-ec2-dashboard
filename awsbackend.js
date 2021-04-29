@@ -39,7 +39,7 @@ function GenerateInstanceTypesFile(account,region) { // get the updated list of 
   var ec2client=new AWS.EC2( { 'region': region, 'accessKeyId': appOptions.Accounts[account].AWSKey, 'secretAccessKey': appOptions.Accounts[account].AWSSecret } );
   AWSPaginator (ec2client, 'describeInstanceTypes', undefined, 'InstanceTypes', function (err,itypes) {
     if (err) {
-      console.log ('Error getting instance types from AWS ',err);
+      console.log ('Error getting instance types from AWS ',err,err.stack);
       return;
     }
     var instancetypes={}; // object for all possible instance types
@@ -66,19 +66,16 @@ awsrouter.get('/instancesjson', (req,res)=> {
   var instancestatuses={}; // object of aggregated instance statuses
   var instances = []; // aggregated list of describe instances data
   if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Account is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Account is undefined"}').end;
   }
   if (typeof(req.query.region) == 'undefined' || req.query.region ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Region is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Region is undefined"}').end;
   }
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   AWSPaginator(ec2client, 'describeInstanceStatus', undefined, 'InstanceStatuses', function (err,data1) { // call paginator to get Instance Statuses
     if (err) {
       console.log(err, err.stack);
-      res.writeHead(500,{'Content-Type': 'application/json'});
-      return res.end('{"error":"Error getting describeInstanceStatus from AWS"}'); //close http request on error
+      return res.status(500).type('application/json').send('{"error":"Error getting describeInstanceStatus from AWS"}').end; //close http request on error
     }
     console.log('Got instance statuses for: '+data1.length+' instances');
     var instancestatus='Offline'; // default status of instance
@@ -94,8 +91,7 @@ awsrouter.get('/instancesjson', (req,res)=> {
     AWSPaginator(ec2client, 'describeInstances', undefined, 'Reservations', function (err,data2) { // call paginator to Describe Instances
       if (err) {
         console.log(err, err.stack);
-        res.writeHead(500,{'Content-Type': 'application/json'});
-        return res.end('{"error":"Error getting describeInstances from AWS"}'); // close http request on error
+        return res.status(500).type('application/json').send('{"error":"Error getting describeInstances from AWS"}').end; // close http request on error
       }
       console.log('Got instance information for: '+data2.length+' instances');
       for (var i=0;i<data2.length;i++){ // iterate through array of all instances
@@ -122,28 +118,24 @@ awsrouter.get('/instancesjson', (req,res)=> {
         }
         instances.push(instanceobj) // populate instances array with complete instance status and information
       }
-      res.writeHead(200,{'Content-Type': 'application/json'}); // set returned type to Json
-      return res.end(JSON.stringify(instances,null,0)); // return instances object as json data
+      return res.status(200).type('application/json').send(JSON.stringify(instances,null,0)).end; // return instances object as json data
     });
   });
 });
 
 awsrouter.get('/volumesjson', (req,res)=> {
   if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Account is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Account is undefined"}').end;
   }
   if (typeof(req.query.region) == 'undefined' || req.query.region ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Region is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Region is undefined"}').end;
   }
   var volumes={} // object of described volumes
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   AWSPaginator(ec2client, 'describeVolumes', undefined, 'Volumes', function (err,data3) {
     if (err) {
       console.log(err, err.stack);
-      res.writeHead(500,{'Content-Type': 'application/json'});
-      return res.end('{"error":"Error getting describeVolumes from AWS"}');
+      return res.status(500).type('application/json').send('{"error":"Error getting describeVolumes from AWS"}').end;
     }
     else {
       for (var i=0;i<data3.length;i++){
@@ -164,8 +156,7 @@ awsrouter.get('/volumesjson', (req,res)=> {
           volumes[data3[i].VolumeId].Device=data3[i].Attachments[0].Device;
         }
       }
-      res.writeHead(200,{'Content-Type': 'application/json'});
-      return res.end(JSON.stringify(volumes,null,0));
+      return res.status(200).type('application/json').send(JSON.stringify(volumes,null,0)).end;
     }
   });
 });
@@ -186,60 +177,49 @@ awsrouter.get('/configuration', (req,res)=> {
       "Tags": appOptions.Accounts[accounts[i]].Tags
     }
   }
-  res.writeHead(200,{'Content-Type': 'application/json'});
-  res.end(JSON.stringify(configuration,null,0));
+  return res.status(200).type('application/json').send(JSON.stringify(configuration,null,0)).end;
 });
 
 awsrouter.get('/consolescreenshot', (req,res)=> {
   if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Account is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Account is undefined"}').end;
   }
   if (typeof(req.query.region) == 'undefined' || req.query.region ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Region is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Region is undefined"}').end;
   }
   if (typeof(req.query.InstanceId) == 'undefined' || req.query.InstanceId ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"InstanceId is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"InstanceId is undefined"}').end;
   }
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   ec2client.getConsoleScreenshot({InstanceId: req.query.InstanceId}, function (err,data) {
     if (err) {
       console.log(err, err.stack);
-      res.writeHead(500,{'Content-Type': 'application/json'});
-      return res.end('{"error":"Error getting getConsoleScreenshot for '+req.query.InstanceId+' from AWS"}');
+      return res.status(500).type('application/json').send('{"error":"Error getting getConsoleScreenshot for '+req.query.InstanceId+' from AWS"}').end;
     }
     else {
-      res.writeHead(200,{'Content-Type': 'application/json'});
-      return res.end(data.ImageData);
+      return res.status(200).type('application/json').send(data.ImageData).end;
     }
   });
 });
 
 awsrouter.get('/consoleoutput', (req,res)=> {
   if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Account is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Account is undefined"}').end;
   }
   if (typeof(req.query.region) == 'undefined' || req.query.region ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"Region is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"Region is undefined"}').end;
   }
   if (typeof(req.query.InstanceId) == 'undefined' || req.query.InstanceId ==''){
-    res.writeHead(500,{'Content-Type': 'application/json'});
-    return res.end('{"error":"InstanceId is undefined"}');
+    return res.status(500).type('application/json').send('{"error":"InstanceId is undefined"}').end;
   }
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   ec2client.getConsoleOutput({InstanceId: req.query.InstanceId}, function (err,data) {
     if (err) {
       console.log(err, err.stack);
-      res.writeHead(500,{'Content-Type': 'application/json'});
-      return res.end('{"error":"Error getting getConsoleScreenshot for '+req.query.InstanceId+' from AWS"}');
+      return res.status(500).type('application/json').send('{"error":"Error getting getConsoleScreenshot for '+req.query.InstanceId+' from AWS"}').end;
     }
     else {
-      res.writeHead(200,{'Content-Type': 'application/json'});
-      return res.end(data.Output);
+      return res.status(200).type('application/json').send(data.Output).end;
     }
   });
 });

@@ -9,11 +9,25 @@
 <script src="scripts/tablesort.js"></script>
 <script src="scripts/instancetypes.js"></script>
 <script src="scripts/awsdashboard.js"></script>
+<style>
+th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+  background: rgba(80,80,80,1) !important;
+}
+th.sorted {
+  background: rgba(127,127,127,1) !important;
+}
+</style>
 </head>
 <body style="background-color: black" onload="appInit()">
-<div class="ui large modal" id="modal_contents" style="background-color:#4d4d4d; color:#f2f2f2">
-</div>
 <div class="ui inverted top pointing menu" id="MainMenu"></div>
-<div class="ui inverted bottom segment" id="TableContents"></div>
+<div class="ui inverted segment">
+    <div class="ui top aligned dimmer" id="TableDimmer"><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><div class="ui inline text loader">Loading</div></div>
+    <div class="ui large modal" id="modal_contents" style="background-color:#4d4d4d; color:#f2f2f2"></div>
+    <div id="TableContents"><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p></div>
+</div>
 </body>
 </html>

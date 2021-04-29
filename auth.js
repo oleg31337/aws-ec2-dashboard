@@ -74,10 +74,10 @@ passportrouter.get(`${serverOptions.APP_ROOT_URL}/logout`,
 passportrouter.get(`${serverOptions.APP_ROOT_URL}/checksession`,(req, res) => {
   if (req.isAuthenticated()){
     //console.log(req.user);
-    return res.type('application/json').status(200).end('{"message":"ok","username":"'+req.user.firstName+' '+req.user.lastName+'","email":"'+req.user.email+'"}');
+    return res.status(200).type('application/json').send('{"message":"ok","username":"'+req.user.firstName+' '+req.user.lastName+'","email":"'+req.user.email+'"}').end;
   }
   else {
-    return res.type('application/json').status(200).end('{"message":"Not authenticated"}');
+    return res.status(200).type('application/json').send('{"message":"Not authenticated"}').end;
   }
 });
 
@@ -89,8 +89,7 @@ passportrouter.post(`${serverOptions.APP_ROOT_URL}/saml/acs`,
   }
 );
 passportrouter.get(`${serverOptions.APP_ROOT_URL}/saml/metadata.xml`, (req, res)=>{ // Generate SAML Service Provider xml metadata.
-  res.type('application/xml');
-  res.status(200).send(samlStrategy.generateServiceProviderMetadata(null,fs.readFileSync(serverOptions.SSL_CERTIFICATE,'utf-8')));
+  res.status(200).type('application/xml').send(samlStrategy.generateServiceProviderMetadata(null,fs.readFileSync(serverOptions.SSL_CERTIFICATE,'utf-8'))).end;
 });
 
 passportrouter.post(`${serverOptions.APP_ROOT_URL}/saml/logout`, passport.logoutSamlCallback); // IDP initiated logout route

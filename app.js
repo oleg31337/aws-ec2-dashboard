@@ -13,7 +13,7 @@ var auth=require('./auth.js'); //import Passport SAML login/logout functions and
 var awsbackend = require('./awsbackend.js'); //import AWS ec2 dashboard functions and routes
 
 
-const https_options = {
+const https_options = { // options for HTTPS server
   key: fs.readFileSync(serverOptions.SSL_PRIVATE_KEY),
   cert: fs.readFileSync(serverOptions.SSL_CERTIFICATE),
   minVersion: 'TLSv1.2' // only support TLS v1.2 protocol for better security
@@ -21,7 +21,7 @@ const https_options = {
 
 const app = express(); // initialize Express
 
-const fileStoreOptions = {
+const fileStoreOptions = { // session file store options.
   ttl: 3600*24 // 1 day
 };
 
@@ -44,37 +44,17 @@ app.use(auth.passport.initialize()); //initialize Passport
 app.use(auth.passport.session());  //initialize Passport session
 app.use(auth.passportrouter);      // use passport router from passport.js
 
-/* app.get(serverOptions.APP_ROOT_URL, (req, res, next) => {
-  res.send('\
-    <h1>express test</h1>\
-    <a href="/awsdashboard/secure">go to secure page</a></br>\
-    <a href="/awsdashboard/login">go to login page</a></br>\
-    <a href="/awsdashboard/logout">go to logout page</a></br>\
-    <a href="/awsdashboard/saml/metadata.xml">generate metadata</a></br>\
-  ')
-}); */
-
 app.get('/', (req, res, next) => {
-  res.redirect(serverOptions.APP_ROOT_URL);
+  res.redirect(serverOptions.APP_ROOT_URL); //redirect from root to application url path
 });
-
-/* app.get(`${serverOptions.APP_ROOT_URL}/secure`, (req, res, next) => {
-  if (req.isAuthenticated()){
-    res.send('<h1>You are authenticated to view secure page!</h1><h4>'+JSON.stringify(req.user.nameID,null,2)+'</h4><a href="/">Go back</a>');
-  }
-  else {
-    res.status(403);
-    res.send('<h1>Not authenticated!</h1><a href="/">Go back</a>');
-  }
-}); */
 
 app.use(serverOptions.APP_ROOT_URL, awsbackend.awsrouter); // add awsbackend router to the express
 
 app.use(serverOptions.APP_ROOT_URL, express.static(path.join(__dirname, 'public'))); // supply local public content (html,css, scripts, etc.)
 
 app.use((err, req, res, next) => { //global error handler
-  console.error(err.stack)
-  return res.status(500).send('Server error. Please contact Administrator.')
+  console.error(err.stack);
+  return res.status(500).type('application/json').send('Internal server error. Please contact Administrator.').end;
 })
 
 function appInit() { // main function that starts everything
@@ -94,11 +74,17 @@ function appInit() { // main function that starts everything
   }
   if (serverOptions.UseHTTPS === true){ // read server properties and chose between http and https services
     console.log ('Starting HTTPS server');
-    const serverHTTPS = https.createServer(https_options,app).listen(serverOptions.HTTPSport, (err)=> {if (!err) {console.log("Server is listening on port "+serverOptions.HTTPSport)} else {console.log("Error starting server on port "+serverOptions.HTTPSport+" "+err);};});
+    const serverHTTPS = https.createServer(https_options,app).listen(serverOptions.HTTPSport, (err)=> { // start HTTPS service and connect to Express app
+      if (!err) {console.log("Server is listening on port "+serverOptions.HTTPSport)} 
+      else {console.log("Error starting server on port "+serverOptions.HTTPSport+" "+err);}
+    });
   }
   else {
     console.log ('Starting HTTP server');
-    const serverHTTP = http.createServer(app).listen(serverOptions.HTTPport, (err)=> {if (!err) {console.log("Server is listening on port "+serverOptions.HTTPport)} else {console.log("Error starting server on port "+serverOptions.HTTPport+" "+err);};});
+    const serverHTTP = http.createServer(app).listen(serverOptions.HTTPport, (err)=> { // start HTTP service and connect to Express app
+      if (!err) {console.log("Server is listening on port "+serverOptions.HTTPport)} 
+      else {console.log("Error starting server on port "+serverOptions.HTTPport+" "+err);}
+    });
   }
 }
 

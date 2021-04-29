@@ -12,7 +12,7 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function setCookie(cname, cvalue, cexpire) {
+function setCookie(cname, cvalue, cexpire) { //function to set a cookie
   var expires='';
   if (typeof(cexpire) != 'undefined'){
     var d = new Date();
@@ -22,7 +22,7 @@ function setCookie(cname, cvalue, cexpire) {
   document.cookie = cname + '=' + cvalue + expires + '; path=/';
 }
 
-function getCookie(cname) {
+function getCookie(cname) { //function to read a single cookie value
   var name = cname + "=";
   var decodedCookie = decodeURIComponent(document.cookie);
   var ca = decodedCookie.split(';');
@@ -38,7 +38,7 @@ function getCookie(cname) {
   return "";
 }
 
-function setClipboard(value,elem) {
+function setClipboard(value,elem) { //function to copy specified text to clipboard and change data tooltip for 1 sec to Copied
     var tempInput = document.createElement("input");
     tempInput.style = "position: absolute; left: -1000px; top: -1000px";
     tempInput.value = value;
@@ -50,7 +50,7 @@ function setClipboard(value,elem) {
     setTimeout(function(){elem.parentElement.setAttribute("data-tooltip","Copy");},1000);
 }
 
-function filterTable() {
+function filterTable() { // function to filter table
   var input = document.getElementById("TableFilter"); //input filter in the menu bar
   var filter = input.value.toUpperCase(); // we perform case insensitive filtering
   var table = document.getElementById("InstancesTable"); //get our table to filter
@@ -79,7 +79,7 @@ function filterTable() {
   }
 }
 
-async function getTableData(account,region){
+async function getTableData(account,region){ // get instance and volumes data from the backend
   console.log('getTableData');
   var inst=fetch("instancesjson?region="+region+"&account="+account);
   var vols=fetch("volumesjson?region="+region+"&account="+account);
@@ -91,13 +91,12 @@ async function getTableData(account,region){
         })
     });
 }
-//.json()  generateTable(i.value,v.value,account,region)
 function clearTableData(){
   console.log('clearTableData');
-  document.getElementById("TableContents").innerHTML=activedimmer
+  $('#TableDimmer').addClass('active');
 }
 
-function getGlobalConfiguration(nextfunction){
+function getGlobalConfiguration(nextfunction){ // get global app config from the backend
   console.log('getGlobalConfiguration');
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.timeout=5000;
@@ -113,16 +112,14 @@ function getGlobalConfiguration(nextfunction){
   xmlhttp.send();
 }
 
-function generateMenu(account,region){
+function generateMenu(account,region){ // build menu with accounts and regions
+  clearTableData();
   console.log('generateMenu');
   if (typeof(account) == 'undefined') account="";
   if (typeof(region) == 'undefined') region="";
   var urlParams = new URLSearchParams(window.location.search);
   if (account =="" && urlParams.has('account') && urlParams.get('account') !="" && window.globalconfig.AccountsList.includes(urlParams.get('account'))){
     account=urlParams.get('account');
-  }
-  if (region =="" && urlParams.has('region') && urlParams.get('region') !="" && window.globalconfig.Accounts[account].RegionsList.includes(urlParams.get('region'))){
-    region=urlParams.get('region');
   }
   if (account =="" && getCookie("account") != "" && window.globalconfig.AccountsList.includes(getCookie("account"))){
     account=getCookie("account");
@@ -132,6 +129,9 @@ function generateMenu(account,region){
   }
   if (account == ""){ // finally set account to default
     account=window.globalconfig.AccountsList[0];
+  }
+  if (region =="" && urlParams.has('region') && urlParams.get('region') !="" && window.globalconfig.Accounts[account].RegionsList.includes(urlParams.get('region'))){
+    region=urlParams.get('region');
   }
   if (region == ""){ //finally set region to default
     region=window.globalconfig.Accounts[account].RegionsList[0];
@@ -157,32 +157,31 @@ function generateMenu(account,region){
   menuitems+='<div class="right menu"><div class="ui inverted transparent left icon input"><i class="filter icon"></i><input id="TableFilter" type="text" placeholder="Filter..." onkeyup="filterTable()" onpaste="filterTable()"></div><a class="ui item" onclick="document.getElementById(\'TableFilter\').value=\'\';filterTable()"><i class="trash alternate outline icon"></i>Clear<br/>filter</a><a class="ui item" onclick="refreshTable(\''+account+'\',\''+region+'\')"><i class="sync icon"></i>Refresh</a><a href="login" class="ui item" id="loginmenu"><i class="user outline icon"></i><div id="logintext">Login</div></a></div>'
   document.getElementById('MainMenu').innerHTML=menuitems;
   checkSession();
-  clearTableData();
   getTableData(account,region);
 }
 
-function refreshTable(account,region){
-    console.log("refreshTable");
-    checkSession();
-    clearTableData();
-    getTableData(account,region);
+function refreshTable(account,region){ //refresh table data
+  console.log("refreshTable");
+  clearTableData();
+  checkSession();
+  getTableData(account,region);
 }
 
-function logoutDialog(){
-    document.getElementById('modal_contents').setAttribute("class", "ui mini modal");
-    document.getElementById('modal_contents').setAttribute("style", "");
-    document.getElementById('modal_contents').innerHTML='\
-    <div class="ui header">Do you want to logout?</div>\
-    <div class="content">\
-    </div>\
-    <div class="ui actions">\
-      <a href="logout" class="ui submit button">Logout</a>\
-      <div class="ui black deny button">Cancel</div>\
-    </div>';
-    $('.ui.mini.modal').modal('show');
+function logoutDialog(){ // log-out confirmation dialog
+  document.getElementById('modal_contents').setAttribute("class", "ui mini modal");
+  document.getElementById('modal_contents').setAttribute("style", "");
+  document.getElementById('modal_contents').innerHTML='\
+  <div class="ui header">Do you want to logout?</div>\
+  <div class="content">\
+  </div>\
+  <div class="ui actions">\
+    <a href="logout" class="ui submit button">Logout</a>\
+    <div class="ui black deny button">Cancel</div>\
+  </div>';
+  $('.ui.mini.modal').modal('show');
 }
 
-function checkSession() {
+function checkSession() { // check if user is authenticated and there is a valid session on the backend.
   console.log("generateTable");
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.timeout=5000;
@@ -206,7 +205,7 @@ function checkSession() {
   xmlhttp.send();
 }
 
-function generateTable(instances,volumes,account,awsregion) {
+function generateTable(instances,volumes,account,awsregion) { // create instances table contents
   console.log("generateTable");
   //console.log("account: ",account);
   //console.log("region: ",awsregion);
@@ -295,11 +294,16 @@ function generateTable(instances,volumes,account,awsregion) {
     </tr>';
   }
   out += "</tbody></table>"
-  document.getElementById("TableContents").innerHTML = out;
-  $('table').tablesort().data('tablesort').sort($("th.default-sort"));
-  filterTable();
+  if (instances.length>0){
+    document.getElementById("TableContents").innerHTML = out;
+    $('table').tablesort().data('tablesort').sort($("th.default-sort"));
+    filterTable();
+  }else {
+    document.getElementById("TableContents").innerHTML ='<div class="ui inverted placeholder segment"><div class="ui inverted icon header"><i class="search icon"></i>There are no instances in this region</div></div>';
+  }
+  $('#TableDimmer').removeClass('active');
 }
-function manageDialog(account,region,instanceId,instanceName,command){
+function manageDialog(account,region,instanceId,instanceName,command){ // confirmation dialog for start/stop of instances
     document.getElementById('modal_contents').setAttribute("class", "ui mini modal");
     document.getElementById('modal_contents').setAttribute("style", "");
     document.getElementById('modal_contents').innerHTML='\
@@ -314,7 +318,7 @@ function manageDialog(account,region,instanceId,instanceName,command){
         </div>';
     $('.ui.mini.modal').modal('show');
 }
-function responseDialog(message,error){
+function responseDialog(message,error){ // response and error dialog to confirm actions by manageDialog
   document.getElementById('modal_contents').setAttribute("class", "ui mini modal");
   document.getElementById('modal_contents').setAttribute("style", "");
   if (typeof error !== 'undefined') {
@@ -332,7 +336,7 @@ function responseDialog(message,error){
   }
   $('.ui.mini.modal').modal('show');
 }
-function doManage(account,region,instanceId,command){
+function doManage(account,region,instanceId,command){ // send a manage command to backend app
   console.log("doManage");
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.timeout=5000;
@@ -359,7 +363,7 @@ function doManage(account,region,instanceId,command){
   $('.ui.mini.modal').modal('hide'); //hide modal
   document.getElementById('modal_contents').innerHTML=''; //destroy modal contents
 }
-function displayConsoleScreenshot(instanceId,account,awsregion){
+function displayConsoleScreenshot(instanceId,account,awsregion){ // show instance console screenshot dialog
     document.getElementById('modal_contents').setAttribute("class", "ui large modal");
     document.getElementById('modal_contents').setAttribute("style", "background-color:#4d4d4d; color:#f2f2f2");
     var xmlhttp = new XMLHttpRequest();
@@ -383,7 +387,7 @@ function displayConsoleScreenshot(instanceId,account,awsregion){
     $('.ui.large.modal').modal('show');
 }
 
-function displayConsoleOutput(instanceId,account,awsregion){
+function displayConsoleOutput(instanceId,account,awsregion){ // show instance console log dialog
     document.getElementById('modal_contents').setAttribute("class", "ui large modal");
     document.getElementById('modal_contents').setAttribute("style", "background-color:#4d4d4d; color:#f2f2f2");
     var xmlhttp = new XMLHttpRequest();
@@ -406,8 +410,7 @@ function displayConsoleOutput(instanceId,account,awsregion){
     $('.ui.large.modal').modal('show');
 }
 
-function appInit() {
-  clearTableData();
+function appInit() { // main app that is called from the html page to initialize the frontend app
   console.log('appInit');
-  getGlobalConfiguration(generateMenu);
+  getGlobalConfiguration(generateMenu); // get the global config, then generate the menu. menu will trigger getting data and creating table.
 }
