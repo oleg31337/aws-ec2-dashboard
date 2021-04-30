@@ -239,9 +239,9 @@ awsrouter.post('/manage', (req,res)=> { // endpoint to perform start/stop comman
   }
   console.log((new Date()).toISOString(),"manage:",req.query.account,req.query.region,req.query.InstanceId,req.query.command);
   if (req.isAuthenticated()){
-    if (!appOptions.Accounts[req.query.account].AuthorizedUsers.includes(req.user.email)) {
+    if (!appOptions.Accounts[req.query.account].AuthorizedUsers.includes(req.user.nameID)) {
       console.log((new Date()).toISOString(),'User',req.user.nameID,'is NOT authorized to',req.query.command,req.query.InstanceId);
-      return res.status(403).type('application/json').send('{"error":"You are not authorized to perform this operation. Ask your administrator for permissions."}');
+      return res.status(403).type('application/json').send('{"error":"You are not authorized to perform this operation. Ask your administrator for permissions."}').end;
     }
   }
   else {
