@@ -3,13 +3,15 @@
   "HTTPSport": 8443,
   "UseHTTPS": true,
   "APP_ROOT_URL": "/awsdashboard",
-  "APP_FQDN": "my.server.domain.name.com",
   
   "SSL_CERTIFICATE": "./certificates/cert.crt",
   "SSL_PRIVATE_KEY": "./certificates/cert.key",
   
-  "SAML_APP_NAME":"aws-ec2-dashboard",
+  "SAML_SP_ENTITYID_URL":"https://my.server.domain.com:8443/awsdashboard/saml2",
+  "SAML_SP_ACS_URL":"https://my.server.domain.com:8443/awsdashboard/saml/acs",
+  "SAML_SP_SLO_URL":"https://my.server.domain.com:8443/awsdashboard/saml/logout",
+
   "SAML_IDP_SSO_URL":"https://sso.connect.pingidentity.com/sso/idp/SSO.saml2?idpid=91379187391783982",
   "SAML_IDP_SLO_URL":"https://sso.connect.pingidentity.com/sso/SLO.saml2",
-  "SAML_IDP_SSL_CERTIFICATE":"./certificates/idp-signing.crt"
+  "SAML_IDP_SSL_CERTIFICATE":"./certificates/cert.crt"
 }

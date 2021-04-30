@@ -20,7 +20,7 @@ function AWSPaginator (awsclient,awscommand,params={},retdata,callback,array=[],
   }
   awsclient[awscommand](params, function (err,data) { // call actual ec2 client command
     if (err) {
-      console.log(err, err.stack); // print error in the console
+      console.log((new Date()).toISOString(),err, err.stack); // print error in the console
       callback(err,undefined); // call our callback function returning error
       return;
     }
@@ -35,11 +35,11 @@ function AWSPaginator (awsclient,awscommand,params={},retdata,callback,array=[],
 }
 
 function GenerateInstanceTypesFile(account,region) { // get the updated list of available instance types and save it as js for the frontend use
-  console.log('Getting available instance types from the '+account+' account...');
+  console.log((new Date()).toISOString(),'Getting available instance types from the '+account+' account...');
   var ec2client=new AWS.EC2( { 'region': region, 'accessKeyId': appOptions.Accounts[account].AWSKey, 'secretAccessKey': appOptions.Accounts[account].AWSSecret } );
   AWSPaginator (ec2client, 'describeInstanceTypes', undefined, 'InstanceTypes', function (err,itypes) {
     if (err) {
-      console.log ('Error getting instance types from AWS ',err,err.stack);
+      console.log ((new Date()).toISOString(),'Error getting instance types from AWS ',err,err.stack);
       return;
     }
     var instancetypes={}; // object for all possible instance types
@@ -56,8 +56,8 @@ function GenerateInstanceTypesFile(account,region) { // get the updated list of 
       };
     }
     fs.writeFile('./public/scripts/instancetypes.js', 'var instancetypes=JSON.parse(\''+JSON.stringify(instancetypes,null,0)+'\');', function (err, file) {
-      if (err) console.log ('Error writing instance types file '+'./public/scripts/instancetypes.js ',err);
-      console.log('Instance types file was updated.');
+      if (err) console.log ((new Date()).toISOString(),'Error writing instance types file '+'./public/scripts/instancetypes.js ',err);
+      console.log((new Date()).toISOString(),'Instance types file was updated.');
     });
   }); 
 }
@@ -74,10 +74,10 @@ awsrouter.get('/instancesjson', (req,res)=> {
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   AWSPaginator(ec2client, 'describeInstanceStatus', undefined, 'InstanceStatuses', function (err,data1) { // call paginator to get Instance Statuses
     if (err) {
-      console.log(err, err.stack);
+      console.log((new Date()).toISOString(),err, err.stack);
       return res.status(500).type('application/json').send('{"error":"Error getting describeInstanceStatus from AWS"}').end; //close http request on error
     }
-    console.log('Got instance statuses for: '+data1.length+' instances');
+    console.log((new Date()).toISOString(),'Got instance statuses for: '+data1.length+' instances');
     var instancestatus='Offline'; // default status of instance
     for (var i=0;i<data1.length;i++){ // iterate through the array of instance statuses
       if (data1[i].InstanceStatus.Status==='ok' && data1[i].SystemStatus.Status==='ok'){ //only mark it available if both instance and system statuses are ok
@@ -90,10 +90,10 @@ awsrouter.get('/instancesjson', (req,res)=> {
     }
     AWSPaginator(ec2client, 'describeInstances', undefined, 'Reservations', function (err,data2) { // call paginator to Describe Instances
       if (err) {
-        console.log(err, err.stack);
+        console.log((new Date()).toISOString(),err, err.stack);
         return res.status(500).type('application/json').send('{"error":"Error getting describeInstances from AWS"}').end; // close http request on error
       }
-      console.log('Got instance information for: '+data2.length+' instances');
+      console.log((new Date()).toISOString(),'Got instance information for: '+data2.length+' instances');
       for (var i=0;i<data2.length;i++){ // iterate through array of all instances
         var available='Offline'; // default status of instance
         if (typeof data2[i].Instances[0].InstanceId !== 'undefined' && typeof instancestatuses[data2[i].Instances[0].InstanceId] !== 'undefined'){
@@ -134,7 +134,7 @@ awsrouter.get('/volumesjson', (req,res)=> {
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   AWSPaginator(ec2client, 'describeVolumes', undefined, 'Volumes', function (err,data3) {
     if (err) {
-      console.log(err, err.stack);
+      console.log((new Date()).toISOString(),err, err.stack);
       return res.status(500).type('application/json').send('{"error":"Error getting describeVolumes from AWS"}').end;
     }
     else {
@@ -193,7 +193,7 @@ awsrouter.get('/consolescreenshot', (req,res)=> {
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   ec2client.getConsoleScreenshot({InstanceId: req.query.InstanceId}, function (err,data) {
     if (err) {
-      console.log(err, err.stack);
+      console.log((new Date()).toISOString(),err, err.stack);
       return res.status(500).type('application/json').send('{"error":"Error getting getConsoleScreenshot for '+req.query.InstanceId+' from AWS"}').end;
     }
     else {
@@ -215,7 +215,7 @@ awsrouter.get('/consoleoutput', (req,res)=> {
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   ec2client.getConsoleOutput({InstanceId: req.query.InstanceId}, function (err,data) {
     if (err) {
-      console.log(err, err.stack);
+      console.log((new Date()).toISOString(),err, err.stack);
       return res.status(500).type('application/json').send('{"error":"Error getting getConsoleScreenshot for '+req.query.InstanceId+' from AWS"}').end;
     }
     else {
@@ -237,21 +237,23 @@ awsrouter.post('/manage', (req,res)=> { // endpoint to perform start/stop comman
   if (typeof(req.query.command) == 'undefined' || req.query.command ==''){
     return res.status(500).type('application/json').send('{"error":"Command is undefined"}').end;
   }
-  console.log("manage: ",req.query.account,req.query.region,req.query.InstanceId,req.query.command);
+  console.log((new Date()).toISOString(),"manage:",req.query.account,req.query.region,req.query.InstanceId,req.query.command);
   if (req.isAuthenticated()){
     if (!appOptions.Accounts[req.query.account].AuthorizedUsers.includes(req.user.email)) {
+      console.log((new Date()).toISOString(),'User',req.user.nameID,'is NOT authorized to',req.query.command,req.query.InstanceId);
       return res.status(403).type('application/json').send('{"error":"You are not authorized to perform this operation. Ask your administrator for permissions."}');
     }
   }
   else {
     return res.status(403).type('application/json').send('{"error":"You are not authenticated to perform this operation."}').end;
+    console.log((new Date()).toISOString(),'User is NOT authenticated to',req.query.command,req.query.InstanceId);
   }
-  console.log("Authorized to do this:",req.query.command,req.query.InstanceId);
+  console.log((new Date()).toISOString(),'User',req.user.nameID,'is authorized to',req.query.command,req.query.InstanceId);
   var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
   if (req.query.command == 'start'){
     ec2client.startInstances({InstanceIds: [req.query.InstanceId]}, function (err,data) {
       if (err) {
-        console.log(err, err.stack);
+        console.log((new Date()).toISOString(),err, err.stack);
         return res.status(403).type('application/json').send('{"error":"Error starting instance '+req.query.InstanceId+'"}').end;
       }
       else {
@@ -261,7 +263,7 @@ awsrouter.post('/manage', (req,res)=> { // endpoint to perform start/stop comman
   } else if (req.query.command == 'stop'){
     ec2client.stopInstances({InstanceIds: [req.query.InstanceId]}, function (err,data) {
       if (err) {
-        console.log(err, err.stack);
+        console.log((new Date()).toISOString(),err, err.stack);
         return res.status(403).type('application/json').send('{"error":"Error stopping instance '+req.query.InstanceId+'"}').end;
       }
       else {

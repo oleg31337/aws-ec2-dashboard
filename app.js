@@ -53,15 +53,16 @@ app.use(serverOptions.APP_ROOT_URL, awsbackend.awsrouter); // add awsbackend rou
 app.use(serverOptions.APP_ROOT_URL, express.static(path.join(__dirname, 'public'))); // supply local public content (html,css, scripts, etc.)
 
 app.use((err, req, res, next) => { //global error handler
-  console.error(err.stack);
+  console.error((new Date()).toISOString(),err.stack);
   return res.status(500).type('application/json').send('Internal server error. Please contact Administrator.').end;
 })
 
 function appInit() { // main function that starts everything
+  console.log((new Date()).toISOString(),'Starting aws-ec2-dashboard application');
   defaultaccount = Object.keys(appOptions.Accounts)[0]; // get the first available account in the list
   defaultregion = appOptions.Accounts[Object.keys(appOptions.Accounts)[0]].Regions[0].region; // get the first region in the list in the default account
-  console.log('Default account:'+defaultaccount);
-  console.log('Default region:'+defaultregion);
+  console.log((new Date()).toISOString(),'Default account:'+defaultaccount);
+  console.log((new Date()).toISOString(),'Default region:'+defaultregion);
   if (fs.existsSync('./public/scripts/instancetypes.js')) { // check if instancetypes file exists
     var instancetypesMtime = fs.statSync('./public/scripts/instancetypes.js').mtime; // get the modification time of the instancetypes file.
     var nowDate = new Date();
@@ -73,17 +74,17 @@ function appInit() { // main function that starts everything
     awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1'); // get the updated list of available instance types for us-east-1 and save it as js for the frontend use
   }
   if (serverOptions.UseHTTPS === true){ // read server properties and chose between http and https services
-    console.log ('Starting HTTPS server');
+    console.log ((new Date()).toISOString(),'Starting HTTPS server');
     const serverHTTPS = https.createServer(https_options,app).listen(serverOptions.HTTPSport, (err)=> { // start HTTPS service and connect to Express app
-      if (!err) {console.log("Server is listening on port "+serverOptions.HTTPSport)} 
-      else {console.log("Error starting server on port "+serverOptions.HTTPSport+" "+err);}
+      if (!err) {console.log((new Date()).toISOString(),"Server is listening on port "+serverOptions.HTTPSport)} 
+      else {console.log((new Date()).toISOString(),"Error starting server on port "+serverOptions.HTTPSport+" "+err);}
     });
   }
   else {
-    console.log ('Starting HTTP server');
+    console.log ((new Date()).toISOString(),'Starting HTTP server');
     const serverHTTP = http.createServer(app).listen(serverOptions.HTTPport, (err)=> { // start HTTP service and connect to Express app
-      if (!err) {console.log("Server is listening on port "+serverOptions.HTTPport)} 
-      else {console.log("Error starting server on port "+serverOptions.HTTPport+" "+err);}
+      if (!err) {console.log((new Date()).toISOString(),"Server is listening on port "+serverOptions.HTTPport)} 
+      else {console.log((new Date()).toISOString(),"Error starting server on port "+serverOptions.HTTPport+" "+err);}
     });
   }
 }
