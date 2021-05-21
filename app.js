@@ -14,9 +14,12 @@ var awsbackend = require('./awsbackend.js'); //import AWS ec2 dashboard function
 
 const app = express(); // initialize Express
 
+const appLogger = require ('./applogger.js');
+
 const fileStoreOptions = { // session file store options.
   secret: serverOptions.APP_SESSION_FS_SECRET || "not-very-secure-session-filestore",
-  ttl: 3600*24 // 1 day
+  ttl: 3600*24, // 1 day
+  logFn: appLogger.log
 };
 
 app.set('trust proxy', 1); // support for the app behind reverse proxy, allows secure cookie.
@@ -48,16 +51,16 @@ app.use(serverOptions.APP_ROOT_URL, awsbackend.awsrouter); // add awsbackend rou
 app.use(serverOptions.APP_ROOT_URL, express.static(path.join(__dirname, 'public'))); // supply local public content (html,css, scripts, etc.)
 
 app.use((err, req, res, next) => { //global error handler
-  console.error((new Date()).toISOString(),err.stack);
+  appLogger.error(err.stack);
   return res.status(500).type('application/json').send('Internal server error. Please contact Administrator.').end;
 })
 
 function appInit() { // main function that starts everything
-  console.log((new Date()).toISOString(),'Starting aws-ec2-dashboard application');
+  appLogger.log('Starting aws-ec2-dashboard application');
   defaultaccount = Object.keys(appOptions.Accounts)[0]; // get the first available account in the list
   defaultregion = appOptions.Accounts[Object.keys(appOptions.Accounts)[0]].Regions[0].region; // get the first region in the list in the default account
-  console.log((new Date()).toISOString(),'Default account:'+defaultaccount);
-  console.log((new Date()).toISOString(),'Default region:'+defaultregion);
+  appLogger.log('Default account:'+defaultaccount);
+  appLogger.log('Default region:'+defaultregion);
   
   if (fs.existsSync('./public/scripts/instancetypes.js')) { // check if instancetypes file exists
     var instancetypesMtime = fs.statSync('./public/scripts/instancetypes.js').mtime; // get the modification time of the instancetypes file.
@@ -72,22 +75,22 @@ function appInit() { // main function that starts everything
   setInterval(()=>{awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1')},86400000); //update list of instance types once every 24 hours
   
   if (serverOptions.UseHTTPS === true){ // read server properties and chose between http and https services
-    console.log ((new Date()).toISOString(),'Starting HTTPS server');
+    appLogger.log('Starting HTTPS server');
     const https_options = { // options for HTTPS server
       key: fs.readFileSync(serverOptions.SSL_PRIVATE_KEY),
       cert: fs.readFileSync(serverOptions.SSL_CERTIFICATE),
       minVersion: 'TLSv1.2' // only support TLS v1.2 protocol for better security
     };
     const serverHTTPS = https.createServer(https_options,app).listen(serverOptions.HTTPSport, (err)=> { // start HTTPS service and connect to Express app
-      if (!err) {console.log((new Date()).toISOString(),"Server is listening on port "+serverOptions.HTTPSport)} 
-      else {console.log((new Date()).toISOString(),"Error starting server on port "+serverOptions.HTTPSport+" "+err);}
+      if (!err) {appLogger.log("Server is listening on port "+serverOptions.HTTPSport)} 
+      else {appLogger.error((new Date()).toISOString(),"Error starting server on port "+serverOptions.HTTPSport,err);}
     });
   }
   else {
-    console.log ((new Date()).toISOString(),'Starting HTTP server');
+    appLogger.log ('Starting HTTP server');
     const serverHTTP = http.createServer(app).listen(serverOptions.HTTPport, (err)=> { // start HTTP service and connect to Express app
-      if (!err) {console.log((new Date()).toISOString(),"Server is listening on port "+serverOptions.HTTPport)} 
-      else {console.log((new Date()).toISOString(),"Error starting server on port "+serverOptions.HTTPport+" "+err);}
+      if (!err) {appLogger.log("Server is listening on port "+serverOptions.HTTPport)} 
+      else {appLogger.error("Error starting server on port "+serverOptions.HTTPport,err);}
     });
   }
 }

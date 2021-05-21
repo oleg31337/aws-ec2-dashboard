@@ -5,6 +5,7 @@
   "APP_ROOT_URL": "/awsdashboard",
   "APP_SESSION_FS_SECRET": "not-very-secure-session-filestore",
   "APP_SESSION_SECRET": "not-very-secure-session",
+  "DEBUG": false,
 
   "SSL_CERTIFICATE": "./certificates/cert.crt",
   "SSL_PRIVATE_KEY": "./certificates/cert.key",

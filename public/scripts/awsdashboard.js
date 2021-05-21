@@ -94,7 +94,11 @@ async function getTableData(account,region){ // get instance and volumes data fr
           document.getElementById("TableContents").innerHTML ='<div class="ui inverted placeholder segment"><div class="ui inverted icon header"><i class="exclamation triangle icon"></i>Error getting data for this region</div></div>';
           $('#TableDimmer').removeClass('active');
         });
-    });
+    }).catch(err=>{
+          console.log(err);
+          document.getElementById("TableContents").innerHTML ='<div class="ui inverted placeholder segment"><div class="ui inverted icon header"><i class="exclamation triangle icon"></i>Error getting data for this region</div></div>';
+          $('#TableDimmer').removeClass('active');
+        });
 }
 function clearTableData(){
   console.log('clearTableData');

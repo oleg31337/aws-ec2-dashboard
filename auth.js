@@ -4,6 +4,7 @@ const passportrouter = express.Router();
 const passport = require('passport');
 const SamlStrategy = require('passport-saml').Strategy;
 const serverOptions = require ('./server-options.json'); // read backend server configuration file
+const appLogger = require ('./applogger.js'); // logging functions
 
 const samlStrategy = new SamlStrategy(
   {
@@ -70,18 +71,18 @@ passportrouter.get(`${serverOptions.APP_ROOT_URL}/saml/logout`, // log out from 
   function(req, res) {
     if (req.user){
       if (req.user.nameID){
-        console.log((new Date()).toISOString(),`User ${req.user.nameID} is logging out`);
+        appLogger.log(`User ${req.user.nameID} logged out`);
       }
     }
     passport.logoutSaml(req,res); //run passport saml logout routine
   }
 );
 
-passportrouter.get(`${serverOptions.APP_ROOT_URL}/logout`, // regular logout function
+passportrouter.get(`${serverOptions.APP_ROOT_URL}/logout`, // regular logout function. This will not log out from IDP provider, but only end current session.
   function(req, res) {
     if (req.user){
       if (req.user.nameID){
-        console.log((new Date()).toISOString(),`User ${req.user.nameID} is logging out`);
+        appLogger.log(`User ${req.user.nameID} logged out`);
       }
     }
     req.logout(); // Passport logout session
@@ -109,8 +110,8 @@ passportrouter.get(`${serverOptions.APP_ROOT_URL}/checksession`,(req, res) => {
 passportrouter.post(`${serverOptions.APP_ROOT_URL}/saml/acs`,
   passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
   function(req, res) { //SAML ACS callback function
-    console.log((new Date()).toISOString(),`User ${req.user.nameID} has logged in`);
-    //console.log(req.user); // for debugging
+    appLogger.log(`User ${req.user.nameID} logged in`);
+    appLogger.debug(JSON.stringify(req.user)); // for debugging user attributes
     res.redirect(serverOptions.APP_ROOT_URL);
   }
 );
