@@ -1,10 +1,10 @@
 {
   "name": "aws-ec2-dashboard",
   "description": "Simplified AWS EC2 dashboard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "aws-sdk": "^2.895.0",
+    "aws-sdk": "^2.911.*",
     "express": "^4.17.*",
     "express-session": "^1.17.*",
     "fs": "0.0.2",
