@@ -81,14 +81,19 @@ function filterTable() { // function to filter table
 
 async function getTableData(account,region){ // get instance and volumes data from the backend
   console.log('getTableData');
-  var inst=fetch("instancesjson?region="+region+"&account="+account);
-  var vols=fetch("volumesjson?region="+region+"&account="+account);
-  Promise.allSettled([inst, vols])
-    .then(async ([i,v])=>{
-      Promise.allSettled([i.value.json(), v.value.json()])
-        .then(([ii,vv])=>{
-          generateTable(ii.value,vv.value,account,region);
-        })
+  var stat=fetch("describeinstancestatus?region="+region+"&account="+account);
+  var inst=fetch("describeinstances?region="+region+"&account="+account);
+  var vols=fetch("describevolumes?region="+region+"&account="+account);
+  Promise.allSettled([stat,inst,vols])
+    .then(async ([s,i,v])=>{
+      Promise.allSettled([s.value.json(),i.value.json(), v.value.json()])
+        .then(([ss,ii,vv])=>{
+          generateTable(ss.value,ii.value,vv.value,account,region);
+        }).catch(err=>{
+          console.log(err);
+          document.getElementById("TableContents").innerHTML ='<div class="ui inverted placeholder segment"><div class="ui inverted icon header"><i class="exclamation triangle icon"></i>Error getting data for this region</div></div>';
+          $('#TableDimmer').removeClass('active');
+        });
     });
 }
 function clearTableData(){
@@ -113,8 +118,8 @@ function getGlobalConfiguration(nextfunction){ // get global app config from the
 }
 
 function generateMenu(account,region){ // build menu with accounts and regions
-  clearTableData();
   console.log('generateMenu');
+  clearTableData(); // clear table before generating menu
   if (typeof(account) == 'undefined') account="";
   if (typeof(region) == 'undefined') region="";
   var urlParams = new URLSearchParams(window.location.search);
@@ -136,6 +141,10 @@ function generateMenu(account,region){ // build menu with accounts and regions
   if (region == ""){ //finally set region to default
     region=window.globalconfig.Accounts[account].RegionsList[0];
   }
+  var inputfiltervalue='';
+  if (document.getElementById("TableFilter") != null && document.getElementById("TableFilter").value !=''){
+    inputfiltervalue = document.getElementById("TableFilter").value; //get the value of input filter in the menu bar
+  }
   setCookie('account',account); // save account in a cookie
   setCookie('region',region); // save region in a cookie
   //console.log("account="+account+" region="+region);
@@ -154,7 +163,7 @@ function generateMenu(account,region){ // build menu with accounts and regions
     }
     menuitems+='<a class="'+itemclass+'" onclick="generateMenu(\''+account+'\',\''+regions[i].region+'\')" >'+regions[i].name+'<br/>('+regions[i].region+')</a>';
   }
-  menuitems+='<div class="right menu"><div class="ui inverted transparent left icon input"><i class="filter icon"></i><input id="TableFilter" type="text" placeholder="Filter..." onkeyup="filterTable()" onpaste="filterTable()"></div><a class="ui item" onclick="document.getElementById(\'TableFilter\').value=\'\';filterTable()"><i class="trash alternate outline icon"></i>Clear<br/>filter</a><a class="ui item" onclick="refreshTable(\''+account+'\',\''+region+'\')"><i class="sync icon"></i>Refresh</a><a href="login" class="ui item" id="loginmenu"><i class="user outline icon"></i><div id="logintext">Login</div></a></div>'
+  menuitems+='<div class="right menu"><div class="ui inverted transparent left icon input"><i class="filter icon"></i><input id="TableFilter" type="text" placeholder="Filter..." onkeyup="filterTable()" onpaste="filterTable()" value="'+inputfiltervalue+'"></div><a class="ui item" onclick="document.getElementById(\'TableFilter\').value=\'\';filterTable()"><i class="trash alternate outline icon"></i>Clear<br/>filter</a><a class="ui item" onclick="refreshTable(\''+account+'\',\''+region+'\')"><i class="sync icon"></i>Refresh</a><a href="login" class="ui item" id="loginmenu"><i class="user outline icon"></i><div id="logintext">Login</div></a></div>'
   document.getElementById('MainMenu').innerHTML=menuitems;
   checkSession();
   getTableData(account,region);
@@ -182,7 +191,7 @@ function logoutDialog(){ // log-out confirmation dialog
 }
 
 function checkSession() { // check if user is authenticated and there is a valid session on the backend.
-  console.log("generateTable");
+  console.log("checkSession");
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.timeout=5000;
   var url = "checksession";
@@ -205,7 +214,7 @@ function checkSession() { // check if user is authenticated and there is a valid
   xmlhttp.send();
 }
 
-function generateTable(instances,volumes,account,awsregion) { // create instances table contents
+function generateTable(statuses,instances,volumes,account,awsregion) { // create instances table contents
   console.log("generateTable");
   //console.log("account: ",account);
   //console.log("region: ",awsregion);
@@ -232,6 +241,10 @@ function generateTable(instances,volumes,account,awsregion) { // create instance
     var status_color="grey"; //default status label color
     var avail_color="grey"; //default availability label color
     var instance_action=""; // default action for instance
+    var available='Offline'; // default status of instance
+    if (typeof statuses[instances[i].InstanceId] !='undefined'){
+      available=statuses[instances[i].InstanceId];
+    }
     if (instances[i].State=="running"){
       status_color="green";
       instance_action="stop";
@@ -246,10 +259,10 @@ function generateTable(instances,volumes,account,awsregion) { // create instance
     if (instances[i].State=="shutting-down"){
       status_color="orange";
     }
-    if (instances[i].Available=="Available"){
+    if (available=="Available"){
       avail_color="green";
     }
-    if (instances[i].Available=="Unavailable"){
+    if (available=="Unavailable"){
       avail_color="red";
     }
     //generate list of attached volumes
@@ -273,7 +286,7 @@ function generateTable(instances,volumes,account,awsregion) { // create instance
     out += '<tr class="filtrabletr">';
     //instance status and actions
     out+='<td>'+instance_status+'&nbsp;\
-    <div class="ui '+avail_color+' medium label">'+capitalizeFirstLetter(instances[i].Available)+'</div>';
+    <div class="ui '+avail_color+' medium label">'+capitalizeFirstLetter(available)+'</div>';
     if (instances[i].State == "running"){
       out+='<p></p><div class="ui icon button" data-tooltip="Console screenshot" data-inverted="" data-position="top left" onclick="displayConsoleScreenshot(\''+instances[i].InstanceId+'\',\''+account+'\',\''+awsregion+'\')"><i class="camera icon"></i></div> \
       <div class="ui icon button" data-tooltip="Console logs" data-inverted="" data-position="top left" onclick="displayConsoleOutput(\''+instances[i].InstanceId+'\',\''+account+'\',\''+awsregion+'\')"><i class="file alternate outline icon"></i></div>';

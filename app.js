@@ -12,25 +12,20 @@ const appOptions = require ('./app-options.json'); // read frontend dashboard co
 var auth=require('./auth.js'); //import Passport SAML login/logout functions and routes
 var awsbackend = require('./awsbackend.js'); //import AWS ec2 dashboard functions and routes
 
-
-const https_options = { // options for HTTPS server
-  key: fs.readFileSync(serverOptions.SSL_PRIVATE_KEY),
-  cert: fs.readFileSync(serverOptions.SSL_CERTIFICATE),
-  minVersion: 'TLSv1.2' // only support TLS v1.2 protocol for better security
-};
-
 const app = express(); // initialize Express
 
 const fileStoreOptions = { // session file store options.
+  secret: serverOptions.APP_SESSION_FS_SECRET || "not-very-secure-session-filestore",
   ttl: 3600*24 // 1 day
 };
 
+app.set('trust proxy', 1); // support for the app behind reverse proxy, allows secure cookie.
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 
 app.use(session({ // initialize Express session using file store
   store: new fileStore(fileStoreOptions),
-  secret: 'somewhat very secure string',
+  secret: serverOptions.APP_SESSION_SECRET || 'not-very-secure-session',
   resave: false,
   saveUninitialized: false,
   cookie:{
@@ -63,6 +58,7 @@ function appInit() { // main function that starts everything
   defaultregion = appOptions.Accounts[Object.keys(appOptions.Accounts)[0]].Regions[0].region; // get the first region in the list in the default account
   console.log((new Date()).toISOString(),'Default account:'+defaultaccount);
   console.log((new Date()).toISOString(),'Default region:'+defaultregion);
+  
   if (fs.existsSync('./public/scripts/instancetypes.js')) { // check if instancetypes file exists
     var instancetypesMtime = fs.statSync('./public/scripts/instancetypes.js').mtime; // get the modification time of the instancetypes file.
     var nowDate = new Date();
@@ -73,8 +69,15 @@ function appInit() { // main function that starts everything
   else { //if instancetypes file doesn't exist, generate it.
     awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1'); // get the updated list of available instance types for us-east-1 and save it as js for the frontend use
   }
+  setInterval(awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1'),86400000); //update list of instance types once every 24 hours
+  
   if (serverOptions.UseHTTPS === true){ // read server properties and chose between http and https services
     console.log ((new Date()).toISOString(),'Starting HTTPS server');
+    const https_options = { // options for HTTPS server
+      key: fs.readFileSync(serverOptions.SSL_PRIVATE_KEY),
+      cert: fs.readFileSync(serverOptions.SSL_CERTIFICATE),
+      minVersion: 'TLSv1.2' // only support TLS v1.2 protocol for better security
+    };
     const serverHTTPS = https.createServer(https_options,app).listen(serverOptions.HTTPSport, (err)=> { // start HTTPS service and connect to Express app
       if (!err) {console.log((new Date()).toISOString(),"Server is listening on port "+serverOptions.HTTPSport)} 
       else {console.log((new Date()).toISOString(),"Error starting server on port "+serverOptions.HTTPSport+" "+err);}

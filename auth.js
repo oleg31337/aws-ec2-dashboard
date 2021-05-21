@@ -34,6 +34,8 @@ passport.deserializeUser(function (user, done) { // dummy function to deserializ
 
 passport.logoutSamlCallback = function(req, res){ // Callback function for IdP initiated logout
     req.logout(); // Passport logout session
+    req.session.destroy(); //delete local session
+    res.clearCookie('connect.sid');
     res.redirect(serverOptions.APP_ROOT_URL);
 }
 

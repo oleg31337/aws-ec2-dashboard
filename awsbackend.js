@@ -7,9 +7,9 @@ var appOptions = require ('./app-options.json'); // read frontend dashboard conf
 
 function get_tags(tags,name) { // auxilary function to extract tags by key name from stupid AWS array of tags
   for (var j=0;j<tags.length;j++){
-      if (tags[j].Key==name){
-          return tags[j].Value;
-      }
+    if (tags[j].Key==name){
+      return tags[j].Value;
+    }
   }
   return "";
 }
@@ -59,10 +59,10 @@ function GenerateInstanceTypesFile(account,region) { // get the updated list of 
       if (err) console.log ((new Date()).toISOString(),'Error writing instance types file '+'./public/scripts/instancetypes.js ',err);
       console.log((new Date()).toISOString(),'Instance types file was updated.');
     });
-  }); 
+  });
 }
 
-awsrouter.get('/instancesjson', (req,res)=> {
+awsrouter.get('/describeinstancestatus', (req,res)=> {
   var instancestatuses={}; // object of aggregated instance statuses
   var instances = []; // aggregated list of describe instances data
   if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
@@ -88,28 +88,37 @@ awsrouter.get('/instancesjson', (req,res)=> {
       }
       instancestatuses[data1[i].InstanceId]=instancestatus; // populate instancestatuses object
     }
-    AWSPaginator(ec2client, 'describeInstances', undefined, 'Reservations', function (err,data2) { // call paginator to Describe Instances
+    return res.status(200).type('application/json').send(JSON.stringify(instancestatuses,null,0)).end; // return instances object as json data
+  });
+});
+
+awsrouter.get('/describeinstances', (req,res)=> {
+  var instancestatuses={}; // object of aggregated instance statuses
+  var instances = []; // aggregated list of describe instances data
+  if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
+    return res.status(500).type('application/json').send('{"error":"Account is undefined"}').end;
+  }
+  if (typeof(req.query.region) == 'undefined' || req.query.region ==''){
+    return res.status(500).type('application/json').send('{"error":"Region is undefined"}').end;
+  }
+  var ec2client=new AWS.EC2( { 'region': req.query.region, 'accessKeyId': appOptions.Accounts[req.query.account].AWSKey, 'secretAccessKey': appOptions.Accounts[req.query.account].AWSSecret } );
+  AWSPaginator(ec2client, 'describeInstances', undefined, 'Reservations', function (err,data2) { // call paginator to Describe Instances
       if (err) {
         console.log((new Date()).toISOString(),err, err.stack);
         return res.status(500).type('application/json').send('{"error":"Error getting describeInstances from AWS"}').end; // close http request on error
       }
       console.log((new Date()).toISOString(),'Got instance information for: '+data2.length+' instances');
       for (var i=0;i<data2.length;i++){ // iterate through array of all instances
-        var available='Offline'; // default status of instance
-        if (typeof data2[i].Instances[0].InstanceId !== 'undefined' && typeof instancestatuses[data2[i].Instances[0].InstanceId] !== 'undefined'){
-          available=instancestatuses[data2[i].Instances[0].InstanceId];
-        }
         var instanceobj={
-            InstanceId: data2[i].Instances[0].InstanceId,
-            InstanceType: data2[i].Instances[0].InstanceType,
-            PrivateIpAddress: data2[i].Instances[0].PrivateIpAddress,
-            PublicIpAddress: data2[i].Instances[0].PublicIpAddress,
-            SubnetId: data2[i].Instances[0].SubnetId,
-            VpcId: data2[i].Instances[0].VpcId,
-            AvailabilityZone: data2[i].Instances[0].Placement.AvailabilityZone,
-            BlockDeviceMappings: data2[i].Instances[0].BlockDeviceMappings,
-            State: data2[i].Instances[0].State.Name,
-            Available: available
+          InstanceId: data2[i].Instances[0].InstanceId,
+          InstanceType: data2[i].Instances[0].InstanceType,
+          PrivateIpAddress: data2[i].Instances[0].PrivateIpAddress,
+          PublicIpAddress: data2[i].Instances[0].PublicIpAddress,
+          SubnetId: data2[i].Instances[0].SubnetId,
+          VpcId: data2[i].Instances[0].VpcId,
+          AvailabilityZone: data2[i].Instances[0].Placement.AvailabilityZone,
+          BlockDeviceMappings: data2[i].Instances[0].BlockDeviceMappings,
+          State: data2[i].Instances[0].State.Name,
         }
         if (typeof appOptions.Accounts[req.query.account].Tags !== 'undefined'){
           for (var j=0; j<appOptions.Accounts[req.query.account].Tags.length; j++){
@@ -120,10 +129,9 @@ awsrouter.get('/instancesjson', (req,res)=> {
       }
       return res.status(200).type('application/json').send(JSON.stringify(instances,null,0)).end; // return instances object as json data
     });
-  });
 });
 
-awsrouter.get('/volumesjson', (req,res)=> {
+awsrouter.get('/describevolumes', (req,res)=> {
   if (typeof(req.query.account) == 'undefined' || req.query.account ==''){
     return res.status(500).type('application/json').send('{"error":"Account is undefined"}').end;
   }
@@ -138,6 +146,7 @@ awsrouter.get('/volumesjson', (req,res)=> {
       return res.status(500).type('application/json').send('{"error":"Error getting describeVolumes from AWS"}').end;
     }
     else {
+      console.log((new Date()).toISOString(),'Got volume information for: '+data3.length+' volumes');
       for (var i=0;i<data3.length;i++){
         volumes[data3[i].VolumeId]={};
         volumes[data3[i].VolumeId]={
