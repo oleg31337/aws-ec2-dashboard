@@ -69,7 +69,7 @@ function appInit() { // main function that starts everything
   else { //if instancetypes file doesn't exist, generate it.
     awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1'); // get the updated list of available instance types for us-east-1 and save it as js for the frontend use
   }
-  setInterval(awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1'),86400000); //update list of instance types once every 24 hours
+  setInterval(()=>{awsbackend.GenerateInstanceTypesFile(defaultaccount,'us-east-1')},86400000); //update list of instance types once every 24 hours
   
   if (serverOptions.UseHTTPS === true){ // read server properties and chose between http and https services
     console.log ((new Date()).toISOString(),'Starting HTTPS server');
