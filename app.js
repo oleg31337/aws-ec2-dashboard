@@ -19,7 +19,7 @@ const appLogger = require ('./applogger.js');
 const fileStoreOptions = { // session file store options.
   secret: serverOptions.APP_SESSION_FS_SECRET || "not-very-secure-session-filestore",
   ttl: 3600*24, // 1 day
-  logFn: appLogger.log
+  logFn: appLogger.debug
 };
 
 app.set('trust proxy', 1); // support for the app behind reverse proxy, allows secure cookie.
